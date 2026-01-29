@@ -74,13 +74,38 @@ export async function POST(request: NextRequest) {
             }
 
             // value : Unit8Array (바이너리 데이터)
-            // console.log('value:', value);
+            // console.log('value:', value); // [100, 22, 33, ...]
 
             // 바이너리 데이터 => 문자열로 변환 (디코딩)
             const chunk = decoder.decode(value, {stream: true});
-            console.log(chunk);
-            console.log('-----------------------------------');
+            // console.log(chunk); // data: JSON문자열{~~~~}\n\ndata: JSON문자열{~~~~}\n
+            // console.log('-----------------------------------');
 
+            const lines = chunk.split('\n'); // ['data: JSON문자열{~~~~}', ..]
+            for(const line of lines){
+              // console.log('line -',line);
+              const data = line.slice(6); // JSON문자열 || [DONE]
+
+              if(data === '[DONE]'){
+                controller.close();
+                return;
+              }
+
+              try {
+                const json = JSON.parse(data);  // JSON 객체 (data가 빈문자열일 경우 에러 => catch)
+                // console.log(json);
+
+                const content = json.choices[0]?.delta?.content || ''; // "안"
+
+                if(content){
+                  // 프론트엔드로 SSE 방식으로 content 전달 (data: JSON문자열\n\n)
+                  const sseData = `data: ${JSON.stringify({ content })}\n\n`;
+                  controller.enqueue(new TextEncoder().encode(sseData)); // JSON문자열=>바이너리데이터=>프론트로 흘려보내기
+                }
+              }catch(error){
+                // JSON 문자열 파싱 오류는 스킵 (별도의 과정 x)
+              }
+            }
           }
 
         }catch(error){
@@ -93,8 +118,14 @@ export async function POST(request: NextRequest) {
       }
     })
 
-
-
+    // 5. 클라이언트측으로 응답 (body: stream객체, headers: SSE방식지정)
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive"
+      }
+    })
 
   }catch(error){
     return NextResponse.json({
