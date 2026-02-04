@@ -3,46 +3,48 @@
 import { useEffect, useState } from "react";
 
 export default function TTS_WebSpeechAPI() {
+
+  
   const [hasTTSSupport, setHasTTSSupport] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [assistantText, setAssistantText] = useState(
-    "안녕하세요! 제가 대신 읽어 드릴 텍스트를 여기에 입력해 보세요.",
-  );
+  const [assistantText, setAssistantText] = useState("안녕하세요! 제가 대신 읽어 드릴 텍스트를 여기에 입력해 보세요.");
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
 
-    if (typeof window.speechSynthesis !== "undefined") {
+    if(typeof window === 'undefined') return;
+
+    if(typeof window.speechSynthesis !== 'undefined'){
       setHasTTSSupport(true);
     }
+
   }, []);
 
   const handleSpeak = () => {
-    if (!hasTTSSupport) return; // 브라우저 지원 여부 체크
-    if (!assistantText.trim()) return; // 읽어줄 텍스트 존재 여부 체크
 
-    // 텍스트 읽기 SpeechSynthesis 인스턴스 가져오기
+    if(!hasTTSSupport) return; // 브라우저 지원 여부 체크 
+    if(!assistantText.trim()) return; // 읽어줄 텍스트 존재 여부 체크 
+
+    // SpeechSynthesis 인스턴스 가져오기 
     const synth = window.speechSynthesis;
 
-    // 음성 재생을 위한 텍스트 객체 생성 및 설정
-    const utterance = new SpeechSynthesisUtterance(assistantText.trim());
+    // 음성 재생을 위한 텍스트 객체 생성 및 설정 
+    const utterance = new SpeechSynthesisUtterance(assistantText.trim())
 
-    // 이벤트 핸들러 설정
+    // 이벤트 핸들러 설정 
     utterance.onstart = () => setIsSpeaking(true);
     utterance.onend = () => setIsSpeaking(false);
     utterance.onerror = () => setIsSpeaking(false);
 
     utterance.lang = "ko-KR";
-    utterance.rate = 2;
-    utterance.pitch = 0.5;
-    utterance.volume = 0.5;
-    utterance.voice = synth.getVoices()[12];
+    utterance.rate = 1;
+    utterance.pitch = 1;
+    utterance.volume = 1;
 
-    console.log(synth.getVoices());
+    // console.log(synth.getVoices());
+    utterance.voice = synth.getVoices()[12];
 
     synth.speak(utterance);
 
-    // synth.speak()
   };
 
   const handleStopSpeak = () => {
@@ -50,8 +52,10 @@ export default function TTS_WebSpeechAPI() {
     setIsSpeaking(false);
   };
 
+
   return (
     <section className="flex flex-col rounded-xl border border-zinc-200 bg-zinc-50 p-4">
+
       <div className="mb-5 bg-zinc-50 text-xs text-zinc-700 flex justify-between">
         <span className="font-semibold">브라우저 지원 상태 - TTS </span>{" "}
         {hasTTSSupport ? (
@@ -60,13 +64,13 @@ export default function TTS_WebSpeechAPI() {
           <span className="text-red-600">미지원 ⚠️</span>
         )}
       </div>
-
+      
       <h2 className="mb-2 text-sm font-semibold text-zinc-900">
         TTS - Web Speech API (SpeechSynthesis) 활용
       </h2>
       <p className="mb-3 text-xs text-zinc-600">
-        아래 텍스트를 브라우저가 읽어 줍니다. 보통은 &quot;AI의 답변&quot; 을
-        여기에 넣고 <code>SpeechSynthesis</code>로 재생합니다.
+        아래 텍스트를 브라우저가 읽어 줍니다. 보통은 &quot;AI의 답변&quot; 을 여기에 넣고{" "}
+        <code>SpeechSynthesis</code>로 재생합니다.
       </p>
 
       <div className="mb-3 flex flex-wrap gap-2">

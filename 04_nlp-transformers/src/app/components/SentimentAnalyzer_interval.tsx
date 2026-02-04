@@ -1,72 +1,84 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { pipeline } from "@huggingface/transformers";
+import { pipeline } from "@huggingface/transformers"
 
 type SentimentResult = { label: string; score: number } | null;
 
 export default function SentimentAnalyzer() {
-  // 초기 분석 모델 로딩 중 여부 상태
+
+  // 초기 분석 모델 로딩 중 여부 상태 
   const [loading, setLoading] = useState(true);
   // 모델 로딩 진행 상태 (0 => 95 (부드럽게 점진적으로))
   const [progress, setProgress] = useState(0);
   // 모델 로딩 진행 상태 표시를 위한 상태 (모델 준비 중.. => 모델 다운로드 중… => 모델 로딩 완료)
   const [progressLabel, setProgressLabel] = useState("모델 준비 중…");
 
-  // 입력 문장 상태
+  // 입력 문장 상태 
   const [input, setInput] = useState("");
 
-  // 분석 중 여부 표시를 위한 상태
+  // 분석 중 여부 표시를 위한 상태 
   const [analyzing, setAnalyzing] = useState(false);
-  // 분석 결과 표시를 위한 상태
+  // 분석 결과 표시를 위한 상태 
   const [result, setResult] = useState<SentimentResult>(null);
 
-  // 오류 메시지 표시를 위한 상태
+  // 오류 메시지 표시를 위한 상태 
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // 1) 0.08초 간격으로 progress 진행률을 부드럽게 올리기
+
+    // 1) 0.08초 간격으로 progress 진행률을 부드럽게 올리기 
     const progressInterval = setInterval(() => {
       setProgress((prev) => {
-        if (prev >= 95) return prev;
+        if(prev >= 95) return prev;
         const next = prev + Math.random() * 6 + 2; // 2~8정도씩 랜덤값 증분
         return Math.min(next, 95);
-      });
+      })
     }, 80);
 
-    // 2) 감정분석 모델 파이프라인 로드
+    // 2) 감정분석 모델 파이프라인 로드 
     async function loadClassifierPipeline() {
-      try {
-        setProgressLabel("모델 다운로드 중…");
-        const classifier = await pipeline("sentiment-analysis");
-        // 로드 완료시 => 로딩상태 false, Progress 100%, 타이머 정리
-        if (progressInterval) {
-          clearInterval(progressInterval);
+
+      try{
+
+        setProgressLabel('모델 다운로드 중...');
+        const classifier = await pipeline('sentiment-analysis');
+
+        // 로드 완료시 => 로딩상태 false, Progress 100%, 타이머 정리 
+        if(progressInterval){
+          clearInterval(progressInterval)
         }
         setProgress(100);
-        setProgressLabel("모델 로딩 완료");
+        setProgressLabel('모델 로딩 완료');
         setLoading(false);
-      } catch (error) {
+
+      }catch(error){
         setError(error instanceof Error ? error.message : "모델 로드 실패");
-        if (progressInterval) {
-          clearInterval(progressInterval);
+        if(progressInterval){
+          clearInterval(progressInterval)
         }
         setLoading(false);
       }
+
     }
 
     loadClassifierPipeline();
 
-    // clean-up 함수
-    return () => {
-      if (progressInterval) {
-        clearInterval(progressInterval);
-      }
-    };
-  }, []);
 
-  // 분석 요청시 실행되는 함수
-  const runAnalysis = () => {};
+    // clean-up 함수 
+    return () => {
+      if(progressInterval){
+        clearInterval(progressInterval)
+      }
+    }
+
+  }, [])
+
+
+  // 분석 요청시 실행되는 함수 
+  const runAnalysis = () => {
+
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -135,9 +147,7 @@ export default function SentimentAnalyzer() {
           {(analyzing || result) && (
             <div className="min-h-[3rem] rounded-lg bg-zinc-100 p-4 dark:bg-zinc-800/50">
               {analyzing && (
-                <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                  분석 중…
-                </p>
+                <p className="text-sm text-zinc-500 dark:text-zinc-400">분석 중…</p>
               )}
               {!analyzing && result && (
                 <div className="flex flex-wrap items-center gap-3">

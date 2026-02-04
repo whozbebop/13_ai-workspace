@@ -1,76 +1,89 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { pipeline } from "@huggingface/transformers";
+import { pipeline } from "@huggingface/transformers"
 
 type SentimentResult = { label: string; score: number } | null;
 
 export default function SentimentAnalyzer() {
-  // 초기 분석 모델 로딩 중 여부 상태
+
+  // 초기 분석 모델 로딩 중 여부 상태 
   const [loading, setLoading] = useState(true);
   // 모델 로딩 진행 상태 (0 => 95 (부드럽게 점진적으로))
   const [progress, setProgress] = useState(0);
   // 모델 로딩 진행 상태 표시를 위한 상태 (모델 준비 중.. => 모델 다운로드 중… => 모델 로딩 완료)
   const [progressLabel, setProgressLabel] = useState("모델 준비 중…");
 
-  // 입력 문장 상태
+  // 입력 문장 상태 
   const [input, setInput] = useState("");
 
-  // 분석 중 여부 표시를 위한 상태
+  // 분석 중 여부 표시를 위한 상태 
   const [analyzing, setAnalyzing] = useState(false);
-  // 분석 결과 표시를 위한 상태
+  // 분석 결과 표시를 위한 상태 
   const [result, setResult] = useState<SentimentResult>(null);
 
-  // 오류 메시지 표시를 위한 상태
+  // 오류 메시지 표시를 위한 상태 
   const [error, setError] = useState<string | null>(null);
 
-  const classifierRef = useRef<any>?(null);
+  const classifierRef = useRef<any>(null);
 
   useEffect(() => {
-    // 2) 감정분석 모델 파이프라인 로드
+
     async function loadClassifierPipeline() {
-      try {
-        setProgressLabel("모델 다운로드 중…");
-        const classifier = await pipeline("sentiment-analysis", "모델ID", {
+      try{
+
+        // progress_callback
+        //  : 진행상황 중에 반복적으로 실행시킬 callback 함수 등록 옵션 
+        //  : 진행상황을 추적해서 표시할 수 있음 
+        const classifier = await pipeline('sentiment-analysis', undefined, {
           progress_callback: (args) => {
-            console.log(args);
-            if (args.status === "progress") {
-              setProgress(args.progress); // 진행률 업데이트
-              setProgressLabel(`${args.file} 다운르도 중...`); // 내려받는 파일 다운로드
+            if(args.status === 'progress'){
+              setProgress(args.progress); // 진행률 업데이트 
+              setProgressLabel(`${args.file} 다운로드 중...`); // 내려받는 파일명 안내
             }
-          },
+          }
         });
-        setProgress(100);
-        setProgressLabel("모델 로딩 완료");
+        classifierRef.current = classifier;
+
+        setProgressLabel('모델 로딩 완료');
         setLoading(false);
-      } catch (error) {
+
+      }catch(error){
         setError(error instanceof Error ? error.message : "모델 로드 실패");
         setLoading(false);
       }
     }
-
     loadClassifierPipeline();
-  }, []);
 
-  classifierRef.current = classifierRef;
+  }, [])
 
-  // 분석 요청시 실행되는 함수
-  const runAnalysis = () => {
-    try {
-      const pipe  = classifierRef.current;
-      if(!pipe)
-        throw new Error('모델이 로딩중입니다. 잠시 후 다시 시도해주세요.')
+
+  // 분석 요청시 실행되는 함수 
+  const runAnalysis = async () => { 
+    // 분석 시작 
+    setAnalyzing(true);
+
+    try{
+      const pipe = classifierRef.current; 
+      if(!pipe) 
+        throw new Error('모델이 로딩중입니다. 잠시 후 다시 시도해주세요.');
       if(!input.trim())
         throw new Error('분석할 문장을 입력해주세요.');
 
       const output = await pipe(input.trim()); // [{ label, score }]
+      const result = Array.isArray(output) ? output[0] : output;
+      setResult(result ? {
+        label: result.label,
+        score: result.score,
+      } : null);
 
-    }   catch (error) {
-      setError(error instanceof Error ? error.message : '분석 중 오류가 발생하였습니다.')
-    } finally {
+
+    }catch(error){
+      setError(error instanceof Error ? error.message : '분석 중 오류가 발생하였습니다.');
+    }finally {
       setAnalyzing(false);
     }
-    
+
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -140,9 +153,7 @@ export default function SentimentAnalyzer() {
           {(analyzing || result) && (
             <div className="min-h-[3rem] rounded-lg bg-zinc-100 p-4 dark:bg-zinc-800/50">
               {analyzing && (
-                <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                  분석 중…
-                </p>
+                <p className="text-sm text-zinc-500 dark:text-zinc-400">분석 중…</p>
               )}
               {!analyzing && result && (
                 <div className="flex flex-wrap items-center gap-3">
