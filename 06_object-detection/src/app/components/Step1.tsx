@@ -108,7 +108,7 @@ export default function Step1() {
     setError(null);
     try{
 
-      const results = await model.detect(imgElement, 20, 0.2);
+      const results = await model.detect(imgElement, 20, 0.7);
       console.log(results);
       setDetections(results);
 
